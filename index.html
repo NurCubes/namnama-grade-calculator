@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy Grade Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Karla:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body {
+    margin: 0;
+    font-family: 'Karla', sans-serif;
+    background: linear-gradient(120deg, #4b2e83, #7f5fc2, #b19cd9);
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow-y: auto;
+    color: #fff;
+    padding: 20px;
+}
+.container {
+    position: relative;
+    width: 450px;
+    max-width: 95%;
+    padding: 40px 35px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    backdrop-filter: blur(10px);
+    text-align: center;
+    margin-bottom: 30px;
+}
+header {
+    font-family: 'Cinzel', serif;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #f5e1ff;
+    text-shadow: 2px 2px 8px #b19cd9;
+}
+header p { font-size: 14px; color: #dcd0ff; margin-top: 5px; }
+input {
+    width: 90%;
+    padding: 14px 16px;
+    margin: 12px 0;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
+input::placeholder { color: rgba(255,255,255,0.7); }
+button {
+    padding: 15px 30px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, #a084e8, #c299ff);
+    box-shadow: 0 8px 20px rgba(192,153,255,0.4);
+    transition: all 0.3s ease;
+}
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(192,153,255,0.6);
+    background: linear-gradient(135deg, #c299ff, #a084e8);
+}
+.result {
+    margin-top: 25px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffe1ff;
+    text-shadow: 1px 1px 10px #b19cd9;
+}
+
+/* Student Records */
+#latest-record-container {
+    width: 100%;
+    max-width: 700px;
+    text-align: center;
+}
+.student-box {
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+}
+.student-box:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px rgba(255,255,255,0.2);
+}
+.student-box table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.student-box th, .student-box td {
+    padding: 8px 10px;
+    text-align: center;
+}
+.student-box th {
+    background: rgba(255,255,255,0.1);
+    color: #ffd6ff;
+    font-weight: bold;
+}
+.student-box td {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<header>
+🪄 Fantasy Grade Calculator 🪄
+<p>Discover your magical average!</p>
+</header>
+
+<input type="text" id="name" placeholder="Student Name">
+<input type="number" id="sub1" placeholder="Capstone 2">
+<input type="number" id="sub2" placeholder="IT Elect 1">
+<input type="number" id="sub3" placeholder="IT Elect 2">
+<input type="number" id="sub4" placeholder="SIA">
+<input type="number" id="sub5" placeholder="Web 1">
+
+<button id="calculateBtn">Calculate Average ✨</button>
+<div class="result" id="result"></div>
+</div>
+
+<!-- Student Records -->
+<div id="latest-record-container">
+    <!-- Each student record will appear here -->
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCmMrHhS1Vt_7DRE2UWUfVJbKPZvNlUMvw",
+  authDomain: "namnama-grade-calculator.firebaseapp.com",
+  databaseURL: "https://namnama-grade-calculator-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "namnama-grade-calculator",
+  storageBucket: "namnama-grade-calculator.firebasestorage.app",
+  messagingSenderId: "782839326090",
+  appId: "1:782839326090:web:346d468f47eef0df705473"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let studentCounter = 0;
+let allStudents = [];
+
+// Function to save and display student record
+function saveToDatabase(name, subjects, average) {
+    const studentRef = push(ref(db, 'students'));
+    set(studentRef, {
+        name,
+        subjects,
+        average,
+        timestamp: Date.now()
+    });
+
+    studentCounter++;
+    allStudents.push({ id: studentCounter, name, subjects, average });
+
+    const container = document.getElementById('latest-record-container');
+
+    const studentBox = document.createElement('div');
+    studentBox.className = 'student-box';
+    studentBox.innerHTML = `
+        <table>
+            <tr>
+                <th colspan="2">Student #${studentCounter}</th>
+                ${subjects.map(sub => `<th>${sub.subject}</th>`).join('')}
+                <th>Average</th>
+            </tr>
+            <tr>
+                <td colspan="2">${name}</td>
+                ${subjects.map(sub => `<td>${sub.grade}</td>`).join('')}
+                <td>${average}</td>
+            </tr>
+        </table>
+    `;
+    // Add new student at the top
+    container.prepend(studentBox);
+}
+
+// Main calculate function
+function calculate() {
+    const name = document.getElementById("name").value.trim() || "Unnamed";
+    const subjects = [];
+    for (let i = 1; i <= 5; i++) {
+        const val = parseFloat(document.getElementById(`sub${i}`).value);
+        subjects.push({ subject: document.getElementById(`sub${i}`).placeholder, grade: isNaN(val) ? 0 : val });
+    }
+    const total = subjects.reduce((a,b) => a + b.grade,0);
+    const average = (total / subjects.length).toFixed(2);
+
+    document.getElementById("result").innerHTML = `✨ ${name}'s Magical Average: ${average} ✨`;
+
+    saveToDatabase(name, subjects, average);
+
+    // Clear inputs
+    document.getElementById("name").value = '';
+    for (let i = 1; i <= 5; i++) document.getElementById(`sub${i}`).value = '';
+}
+
+document.getElementById("calculateBtn").addEventListener("click", calculate);
+</script>
+</body>
+</html>
